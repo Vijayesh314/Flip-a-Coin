@@ -9,40 +9,34 @@
 <body>
     <main>
         <h1>Flip-a-Coin Battle</h1>
-
         <section id="boards">
             <div class="panel" id="player">
                 <h2>Player</h2>
                 <p>HP: <span id="player-hp">10</span></p>
                 <p>Coins: <span id="player-coins">5</span></p>
             </div>
-
             <div class="panel" id="ai">
                 <h2>Opponent</h2>
                 <p>HP: <span id="ai-hp">10</span></p>
                 <p>Coins: <span id="ai-coins">5</span></p>
             </div>
         </section>
-
         <section id="actions">
             <button data-action="attack">Attack (1 coin)</button>
             <button data-action="defend">Defend (1 coin)</button>
             <button data-action="steal">Steal (2 coins)</button>
             <button data-action="heal">Heal (2 coins)</button>
-            <button id="random">Randomize</button>
+            <button id="random">Gamble</button>
             <input id="gamble-input" type="number" min="1" value="1" /> coins
         </section>
-
         <section id="log">
-            <div id="flip-display"></div>
+            <div id="flip-display">Press Start to begin!</div>
             <ul id="events"></ul>
         </section>
-
         <div class="controls">
-            <button id="start-btn">Start/Restart</button>
+            <button id="start-btn">Start Game</button>
         </div>
     </main>
-
     <script src="script.js"></script>
 </body>
 </html>
