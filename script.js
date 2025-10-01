@@ -1,13 +1,16 @@
 const maxHP = 10;
 
-let state = {player: {hp: maxHP, coins: 5, defending: false},
-            ai: {hp: maxHP, coins: 5, defending: false},
-            running: false};
+let state = {
+    player: {hp: maxHP, coins: 5, defending: false},
+    ai: {hp: maxHP, coins: 5, defending: false},
+    running: false
+};
 
 const q = (sel) => document.querySelector(sel);
-const log = (text) => {const li = document.createElement("li");
-                        li.textContent = text;
-                        q("#events").prepend(li);
+const log = (text) => {
+    const li = document.createElement("li");
+    li.textContent = text;
+    q("#events").prepend(li);
 };
 
 function updateUI() {
@@ -15,6 +18,40 @@ function updateUI() {
     q("#player-coins").textContent = state.player.coins;
     q("#ai-hp").textContent = state.ai.hp;
     q("#ai-coins").textContent = state.ai.coins;
+    
+    updateDefendingStatus();
+    updateButtonStates();
+}
+
+function updateDefendingStatus() {
+    const playerPanel = q("#player p:first-of-type");
+    const aiPanel = q("#ai p:first-of-type");
+    
+    playerPanel.querySelectorAll('.defending-badge').forEach(b => b.remove());
+    aiPanel.querySelectorAll('.defending-badge').forEach(b => b.remove());
+    
+    if (state.player.defending) {
+        const badge = document.createElement('span');
+        badge.className = 'defending-badge';
+        badge.textContent = 'DEFENDING';
+        playerPanel.appendChild(badge);
+    }
+    
+    if (state.ai.defending) {
+        const badge = document.createElement('span');
+        badge.className = 'defending-badge';
+        badge.textContent = 'DEFENDING';
+        aiPanel.appendChild(badge);
+    }
+}
+
+function updateButtonStates() {
+    const buttons = document.querySelectorAll('[data-action]');
+    buttons.forEach(btn => {
+        btn.disabled = !state.running;
+    });
+    q("#random").disabled = !state.running;
+    q("#gamble-input").disabled = !state.running;
 }
 
 function flipOnce() {
@@ -23,7 +60,7 @@ function flipOnce() {
 
 function flipN(n) {
     let heads = 0;
-    for (leti=0; i<n; i++) {
+    for (let i = 0; i < n; i++) {
         if (flipOnce()) {
             heads++;
         }
@@ -35,19 +72,20 @@ function resolveAttack(attacker, defender) {
     const cost = 1;
     attacker.coins -= cost;
     const success = flipOnce();
-    q("#flip-display").textContent = success ? "Heads - Attack success" : "Tails - Attack failed";
+    q("#flip-display").textContent = success ? "🎯 Heads - Attack success!" : "❌ Tails - Attack failed!";
     if (success) {
         let dmg = 3;
         if (defender.defending) {
-            dmg = 0
+            dmg = 0;
             defender.defending = false;
-            log(`${defender === state.player ? "Player" : "AI"} blocked the attack.`);
+            log(`${defender === state.player ? "Player" : "AI"} blocked the attack!`);
+        } else {
+            defender.hp = Math.max(0, defender.hp - dmg);
+            log(`${attacker === state.player ? "Player" : "AI"} attacked for ${dmg} damage!`);
         }
-        defender.hp = Math.max(0, defender.hp - dmg);
-        log(`${attacker === state.player ? "Player" : "AI"} attacked for ${dmg} damage.`);
     } else {
         attacker.hp = Math.max(0, attacker.hp - 1);
-        log(`${attacker === state.player ? "Player" : "AI"} missed and took 1 damage from recoil.`);
+        log(`${attacker === state.player ? "Player" : "AI"} missed and took 1 damage from recoil!`);
     }
 }
 
@@ -55,12 +93,11 @@ function resolveDefend(actor) {
     const cost = 1;
     actor.coins -= cost;
     const success = flipOnce();
-    q("#flip-display").textContent = success ? "Heads - Strong Defence." : "Tails - Weak Defend.";
+    q("#flip-display").textContent = success ? "🛡️ Heads - Strong Defense!" : "🔰 Tails - Weak Defense!";
+    actor.defending = true;
     if (success) {
-        actor.defending = true;
-        ;pg(`${actor === state.player ? "Player" : "AI"} will fully block the next attack.`);
+        log(`${actor === state.player ? "Player" : "AI"} will fully block the next attack!`);
     } else {
-        actor.defending = true;
         log(`${actor === state.player ? "Player" : "AI"} defended (partial).`);
     }
 }
@@ -69,15 +106,15 @@ function resolveSteal(actor, target) {
     const cost = 2;
     actor.coins -= cost;
     const success = flipOnce();
-    q("#flip-display").textContent = success ? "Heads - Steal success." : "Tails - Steal failed.";
+    q("#flip-display").textContent = success ? "💰 Heads - Steal success!" : "❌ Tails - Steal failed!";
     if (success) {
         const amount = Math.min(3, target.coins);
         target.coins -= amount;
         actor.coins += amount;
-        log(`${actor === state.player ? "Player" : "AI"} stole ${amount} coins. `);
+        log(`${actor === state.player ? "Player" : "AI"} stole ${amount} coins!`);
     } else {
         actor.coins = Math.max(0, actor.coins - 1);
-        log(`${actor === state.player ? "Player" : "AI"} failed to steal and lost 1 coin.`)
+        log(`${actor === state.player ? "Player" : "AI"} failed to steal and lost 1 coin!`);
     }
 }
 
@@ -85,140 +122,186 @@ function resolveHeal(actor) {
     const cost = 2;
     actor.coins -= cost;
     const success = flipOnce();
-    q("#flip-display").textContent = success ? "Heads - Heal success." : "Tails - Head failed.";
+    q("#flip-display").textContent = success ? "❤️ Heads - Heal success!" : "❌ Tails - Heal failed!";
     if (success) {
         const healed = Math.min(maxHP - actor.hp, 3);
         actor.hp += healed;
-        log(`${actor === state.player ? "Player" : "AI"} healed ${healed} HP.`)
+        log(`${actor === state.player ? "Player" : "AI"} healed ${healed} HP!`);
     } else {
-        log(`${actor === state.player ? "Player" : "AI"} failed to heal. `)
+        log(`${actor === state.player ? "Player" : "AI"} failed to heal!`);
     }
 }
 
-function resolveRandomize(actor, bet) {
+function resolveGamble(actor, bet) {
     if (bet <= 0 || bet > actor.coins) {
         log("Invalid gamble amount.");
         return;
     }
     actor.coins -= bet;
     const {heads, n} = flipN(bet);
-    q("#flip-display").textContent = `Flipped ${heads}/${n} heads.`;
-    if (heads > n/2) {
+    q("#flip-display").textContent = `🎲 Flipped ${heads}/${n} heads!`;
+    if (heads > n / 2) {
         const reward = bet * 2;
         actor.coins += reward;
-        log(`${actor === state.player ? "Player" : "AI"} gambled ${bet} and won ${reward}.`);
+        log(`${actor === state.player ? "Player" : "AI"} gambled ${bet} and won ${reward} coins!`);
     } else {
-        log(`${actor === state.player ? "Player" : "AI"} gambled ${bet} and lost it.`);
+        log(`${actor === state.player ? "Player" : "AI"} gambled ${bet} and lost it!`);
     }
 }
 
 function aiChoose() {
-  // super-simple heuristics
-  const ai = state.ai;
-  const player = state.player;
+    const ai = state.ai;
+    const player = state.player;
 
-  if (ai.hp <= 4 && ai.coins >= 2) {
-    return { action: 'heal' };
-  }
+    if (ai.hp <= 4 && ai.coins >= 2) {
+        return {action: 'heal'};
+    }
 
-  if (ai.coins >= 2 && Math.random() < 0.25) {
-    return { action: 'steal' };
-  }
+    if (ai.coins >= 2 && Math.random() < 0.25) {
+        return {action: 'steal'};
+    }
 
-  if (ai.coins >= 1 && Math.random() < 0.4) {
-    return { action: 'attack' };
-  }
+    if (ai.coins >= 1 && Math.random() < 0.4) {
+        return {action: 'attack'};
+    }
 
-  if (ai.coins >= 1) {
-    return { action: 'defend' };
-  }
+    if (ai.coins >= 1) {
+        return {action: 'defend'};
+    }
 
-  return { action: 'gamble', bet: Math.min(1, ai.coins) };
+    return {action: 'gamble', bet: Math.min(1, ai.coins)};
 }
 
 async function aiTurn() {
-  // small pause
-  await new Promise(function(resolve) {
-    setTimeout(resolve, 700);
-  });
+    await new Promise(resolve => setTimeout(resolve, 700));
 
-  const choice = aiChoose();
-  const ai = state.ai;
-  const player = state.player;
+    const choice = aiChoose();
+    const ai = state.ai;
+    const player = state.player;
 
-  if (choice.action === 'attack' && ai.coins >= 1) {
-    resolveAttack(ai, player);
-  } else if (choice.action === 'defend' && ai.coins >= 1) {
-    resolveDefend(ai);
-  } else if (choice.action === 'steal' && ai.coins >= 2) {
-    resolveSteal(ai, player);
-  } else if (choice.action === 'heal' && ai.coins >= 2) {
-    resolveHeal(ai);
-  } else if (choice.action === 'gamble' && ai.coins >= 1) {
-    let bet = 1;
-    if (typeof choice.bet === "number" && choice.bet > 0) {
-      bet = choice.bet;
+    if (choice.action === 'attack' && ai.coins >= 1) {
+        resolveAttack(ai, player);
+    } else if (choice.action === 'defend' && ai.coins >= 1) {
+        resolveDefend(ai);
+    } else if (choice.action === 'steal' && ai.coins >= 2) {
+        resolveSteal(ai, player);
+    } else if (choice.action === 'heal' && ai.coins >= 2) {
+        resolveHeal(ai);
+    } else if (choice.action === 'gamble' && ai.coins >= 1) {
+        let bet = 1;
+        if (typeof choice.bet === "number" && choice.bet > 0) {
+            bet = choice.bet;
+        }
+        resolveGamble(ai, bet);
+    } else {
+        log('AI passed (no coins).');
     }
-    resolveGamble(ai, bet);
-  } else {
-    log('AI passed (no coins).');
-  }
 
-  updateUI();
-  checkEnd();
+    updateUI();
+    checkEnd();
+}
+
+function checkEnd() {
+    if (state.player.hp <= 0) {
+        state.running = false;
+        const msg = document.createElement('div');
+        msg.className = 'game-over';
+        msg.textContent = '💀 Game Over - AI Wins!';
+        q("#log").prepend(msg);
+        updateButtonStates();
+        return true;
+    }
+    if (state.ai.hp <= 0) {
+        state.running = false;
+        const msg = document.createElement('div');
+        msg.className = 'game-over victory';
+        msg.textContent = '🎉 Victory - You Win!';
+        q("#log").prepend(msg);
+        updateButtonStates();
+        return true;
+    }
+    return false;
 }
 
 function playerAction(action, extra) {
-  if (!state.running) {
-    log('Start a game first.');
-    return;
-  }
+    if (!state.running) {
+        log('Start a game first!');
+        return;
+    }
 
-  if (typeof extra !== "number") {
-    extra = 0;
-  }
+    if (typeof extra !== "number") {
+        extra = 0;
+    }
 
-  const player = state.player;
-  const ai = state.ai;
+    const player = state.player;
+    const ai = state.ai;
 
-  if (action === 'attack') {
-    if (player.coins < 1) {
-      log('Not enough coins.');
-      return;
+    if (action === 'attack') {
+        if (player.coins < 1) {
+            log('Not enough coins!');
+            return;
+        }
+        resolveAttack(player, ai);
+    } else if (action === 'defend') {
+        if (player.coins < 1) {
+            log('Not enough coins!');
+            return;
+        }
+        resolveDefend(player);
+    } else if (action === 'steal') {
+        if (player.coins < 2) {
+            log('Not enough coins!');
+            return;
+        }
+        resolveSteal(player, ai);
+    } else if (action === 'heal') {
+        if (player.coins < 2) {
+            log('Not enough coins!');
+            return;
+        }
+        resolveHeal(player);
+    } else if (action === 'gamble') {
+        let bet = Math.floor(extra);
+        if (isNaN(bet) || bet < 1) {
+            bet = 1;
+        }
+        if (player.coins < bet) {
+            log('Not enough coins to gamble!');
+            return;
+        }
+        resolveGamble(player, bet);
     }
-    resolveAttack(player, ai);
-  } else if (action === 'defend') {
-    if (player.coins < 1) {
-      log('Not enough coins.');
-      return;
-    }
-    resolveDefend(player);
-  } else if (action === 'steal') {
-    if (player.coins < 2) {
-      log('Not enough coins.');
-      return;
-    }
-    resolveSteal(player, ai);
-  } else if (action === 'heal') {
-    if (player.coins < 2) {
-      log('Not enough coins.');
-      return;
-    }
-    resolveHeal(player);
-  } else if (action === 'gamble') {
-    let bet = Math.floor(extra);
-    if (isNaN(bet) || bet < 1) {
-      bet = 1;
-    }
-    if (player.coins < bet) {
-      log('Not enough coins to gamble.');
-      return;
-    }
-    resolveGamble(player, bet);
-  }
 
-  updateUI();
-  if (!checkEnd()) {
-    aiTurn();
-  }
+    updateUI();
+    if (!checkEnd()) {
+        aiTurn();
+    }
 }
+
+// Event listeners
+document.querySelectorAll('[data-action]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        playerAction(btn.dataset.action);
+    });
+});
+
+q("#random").addEventListener('click', () => {
+    const bet = parseInt(q("#gamble-input").value) || 1;
+    playerAction('gamble', bet);
+});
+
+q("#start-btn").addEventListener('click', () => {
+    state = {
+        player: {hp: maxHP, coins: 5, defending: false},
+        ai: {hp: maxHP, coins: 5, defending: false},
+        running: true
+    };
+    q("#events").innerHTML = '';
+    document.querySelectorAll('.game-over').forEach(el => el.remove());
+    q("#flip-display").textContent = "Game started! Make your move!";
+    log('New game started!');
+    updateUI();
+});
+
+// Initial UI update
+updateUI();
